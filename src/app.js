@@ -1,49 +1,53 @@
 // src/app.js
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
-const connectDB = require('./config/db');
-const logger = require('./config/logger');
+
+// Rotas
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
-const authMiddleware = require('./middlewares/auth');
-require('./services/reminderService'); // Inicializa o serviço de lembretes
+
+// Middleware de autenticação
+const authMiddleware = require('./config/auth');
+
+// Conexão ao MongoDB
+(async function connectDB() {
+  try {
+    // A partir do Mongoose 7, não precisa mais de useNewUrlParser etc.
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Conectado ao MongoDB com sucesso!');
+  } catch (error) {
+    console.error('Erro ao conectar no MongoDB:', error);
+    process.exit(1);
+  }
+})();
 
 const app = express();
 
-// Conecta ao banco
-connectDB();
+// Configurar CORS
+app.use(cors());
 
-// Configura CORS
-app.use(cors({
-  origin: '*',  // Ajuste conforme necessário (pode ser um array ou regex)
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-// Middleware para log de requisições (exemplo simples)
-app.use((req, res, next) => {
-  logger.info(`[REQUEST] ${req.method} ${req.url}`);
-  next();
-});
-
+// Para interpretar JSON no body
 app.use(express.json());
+
+// Rota de boas-vindas
+app.get('/', (req, res) => {
+  res.send(`
+    <h1>Bem-vindo(a) à API de Gerenciamento de Tarefas!</h1>
+    <p>Acesse a documentação Swagger em: <a href="/api-docs">/api-docs</a></p>
+  `);
+});
 
 // Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Rotas de usuários
+// Rotas Públicas (Cadastro e Login)
 app.use('/usuarios', userRoutes);
 
-// Rotas de tarefas (protegidas por JWT)
+// Rotas Protegidas (Tarefas) - exige JWT
 app.use('/tarefas', authMiddleware, taskRoutes);
-
-// Tratamento de erros geral (exemplo)
-app.use((err, req, res, next) => {
-  logger.error(`[ERROR] ${err.message}`);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
 
 module.exports = app;
