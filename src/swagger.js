@@ -10,8 +10,8 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: 'https://localhost:3000',
-      description: 'Servidor (HTTPS) local'
+      url: 'https://api-task-manager-jd6o.onrender.com/',
+      description: 'Servidor (HTTPS) do Render'
     }
   ],
   components: {
