@@ -2,3 +2,29 @@
 [2025-01-29T16:02:24.281Z] info: Conectado ao MongoDB Atlas com sucesso!
 [2025-01-29T16:03:29.863Z] info: Servidor HTTPS rodando na porta 3000
 [2025-01-29T16:03:30.150Z] info: Conectado ao MongoDB Atlas com sucesso!
+[2025-01-29T16:20:39.846Z] info: Servidor HTTPS rodando na porta 3000
+[2025-01-29T16:20:41.070Z] info: Conectado ao MongoDB Atlas com sucesso!
+[2025-01-29T16:23:38.403Z] info: Servidor HTTPS rodando na porta 3000
+[2025-01-29T16:23:39.623Z] info: Conectado ao MongoDB Atlas com sucesso!
+[2025-01-29T16:25:20.932Z] info: [REQUEST] GET /api-docs
+[2025-01-29T16:25:22.264Z] info: [REQUEST] GET /api-docs
+[2025-01-29T16:25:22.352Z] info: [REQUEST] GET /api-docs/
+[2025-01-29T16:25:22.662Z] info: [REQUEST] GET /api-docs/swagger-ui.css
+[2025-01-29T16:25:23.451Z] info: [REQUEST] GET /api-docs/swagger-ui-standalone-preset.js
+[2025-01-29T16:25:23.580Z] info: [REQUEST] GET /api-docs/swagger-ui-bundle.js
+[2025-01-29T16:25:25.261Z] info: [REQUEST] GET /api-docs/swagger-ui-init.js
+[2025-01-29T16:25:26.444Z] info: [REQUEST] GET /api-docs/favicon-32x32.png
+[2025-01-29T16:25:39.435Z] info: [REQUEST] GET /tarefas
+[2025-01-29T16:25:39.444Z] warn: Tentativa de acesso sem token
+[2025-01-29T16:26:16.746Z] info: [REQUEST] POST /usuarios/register
+[2025-01-29T16:26:17.583Z] info: Novo usuário registrado: 679a56a9bbada1a78083a7c2 - string
+[2025-01-29T16:27:32.514Z] info: [REQUEST] POST /usuarios/login
+[2025-01-29T16:27:33.096Z] info: Login bem-sucedido para: string
+[2025-01-29T16:28:25.171Z] info: [REQUEST] POST /tarefas
+[2025-01-29T16:28:26.102Z] error: Erro ao criar tarefa: Task validation failed: prioridade: `string` is not a valid enum value for path `prioridade`.
+[2025-01-29T16:28:54.450Z] info: [REQUEST] GET /tarefas
+[2025-01-29T16:29:05.742Z] info: [REQUEST] POST /tarefas
+[2025-01-29T16:29:05.763Z] error: Erro ao criar tarefa: Task validation failed: prioridade: `string` is not a valid enum value for path `prioridade`.
+[2025-01-29T16:29:21.939Z] info: [REQUEST] GET /tarefas/export/csv
+[2025-01-29T16:32:23.534Z] info: Servidor HTTPS rodando na porta 3000
+[2025-01-29T16:32:24.763Z] info: Conectado ao MongoDB Atlas com sucesso!

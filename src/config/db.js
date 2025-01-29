@@ -5,10 +5,7 @@ const logger = require('./logger');
 
 async function connectDB() {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    await mongoose.connect(process.env.MONGO_URI);
     logger.info('Conectado ao MongoDB Atlas com sucesso!');
   } catch (error) {
     logger.error('Erro ao conectar no MongoDB:', error);
