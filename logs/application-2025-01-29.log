@@ -28,3 +28,5 @@
 [2025-01-29T16:29:21.939Z] info: [REQUEST] GET /tarefas/export/csv
 [2025-01-29T16:32:23.534Z] info: Servidor HTTPS rodando na porta 3000
 [2025-01-29T16:32:24.763Z] info: Conectado ao MongoDB Atlas com sucesso!
+[2025-01-29T16:42:54.058Z] info: Servidor HTTPS rodando na porta 3000
+[2025-01-29T16:42:56.410Z] info: Conectado ao MongoDB Atlas com sucesso!
