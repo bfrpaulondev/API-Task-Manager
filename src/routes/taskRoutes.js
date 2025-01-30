@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
 const authMiddleware = require('../middlewares/auth');
-const multer = require('../config/multer'); // Config Multer para uploads
+const upload = require('../config/multer'); 
+
 
 /**
  * @swagger
