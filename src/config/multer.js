@@ -1,7 +1,7 @@
 // src/config/multer.js
-const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('./cloudinary');
+import multer from 'multer';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from './cloudinary.js';
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -15,20 +15,15 @@ const storage = new CloudinaryStorage({
       'xls', 'xlsx',            // Planilhas Excel
       'ppt', 'pptx',            // Apresentações PowerPoint
       'txt',                    // Arquivos de texto
-      'gif', 'webp',            // Outros formatos de imagem
+      'gif', 'webp', 'mpeg',    // Outros formatos de imagem
       'zip',                    // Arquivos compactados
-      'odt'                   ,
-      'ods'                   ,
-      'odp'                   ,
+      'odt', 'ods', 'odp',      // OpenDocument formats
       'mp3', 'wav', 'ogg', 'flac', // Arquivos de áudio
-      'mp4', 'avi', 'mkv', 'webm', // Arquivos de vídeo
-      'txt',                    // Arquivos de texto
-      'gif', 'webp',  "mpeg"         // Outros formatos de imagem
-
+      'mp4', 'avi', 'mkv', 'webm'  // Arquivos de vídeo
     ]
   },
 });
 
 const upload = multer({ storage });
 
-module.exports = upload;
+export default upload;
