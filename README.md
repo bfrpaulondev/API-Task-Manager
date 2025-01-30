@@ -44,7 +44,7 @@
     
     Copiar
     
-    `git clone https://github.com/yourusername/taskflow.git
+    `git clone https://github.com/bfrpaulondev/taskflow.git
     cd taskflow` 
     
 2.  **Install Dependencies:**
@@ -282,9 +282,9 @@ This project is licensed under the [MIT License](LICENSE).
 
 For any inquiries or support, please contact:
 
--   **Name:** Your Name
--   **Email:** your.email@example.com
--   **LinkedIn:** [Your LinkedIn Profile](https://www.linkedin.com/in/yourprofile)
+-   **Name:** Bruno Felipe Ribeiro Paulon
+-   **Email:** bfrpaulondev@gmail.com
+-   **LinkedIn:** [Your LinkedIn Profile](https://www.linkedin.com/in/bfrpaulondev)
 
 ----------
 
