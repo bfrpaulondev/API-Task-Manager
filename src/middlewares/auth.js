@@ -1,27 +1,44 @@
-// src/middlewares/auth.js
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const logger = require('../config/logger');
+const User = require('../models/User');
 
-module.exports = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    logger.warn('Tentativa de acesso sem token');
-    return res.status(401).json({ error: 'Token não fornecido' });
-  }
-
-  const [, token] = authHeader.split(' ');
-  if (!token) {
-    logger.warn('Formato de token inválido');
-    return res.status(401).json({ error: 'Token não fornecido' });
-  }
-
+/**
+ * Middleware de autenticação.
+ * Verifica o header "Authorization: Bearer <token>".
+ * Decodifica o token, busca o usuário no BD e seta (req.userId, req.userRole).
+ */
+module.exports = async (req, res, next) => {
   try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Token não fornecido' });
+    }
+
+    // Ex.: "Bearer <token>"
+    const [bearer, token] = authHeader.split(' ');
+    if (!token || bearer.toLowerCase() !== 'bearer') {
+      return res.status(401).json({ error: 'Token não fornecido no formato Bearer' });
+    }
+
+    // Verifica token com JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id;
-    return next();
+    if (!decoded?.id) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    // Busca o usuário no banco para obter a role
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Anexa dados ao req
+    req.userId = user._id.toString();
+    req.userRole = user.role;
+
+    // Prossegue para o próximo middleware/rota
+    next();
   } catch (error) {
-    logger.warn(`Token inválido: ${error.message}`);
-    return res.status(401).json({ error: 'Token inválido' });
+    return res.status(401).json({ error: 'Token inválido ou expirado' });
   }
 };

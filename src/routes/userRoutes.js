@@ -2,12 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const authMiddleware = require('../middlewares/auth');
+const checkAdmin = require('../middlewares/checkAdmin');
 
 /**
  * @swagger
  * tags:
  *   name: Usuários
- *   description: Endpoints de cadastro e login
+ *   description: Endpoints para cadastro, login e gerenciamento de usuários
  */
 
 /**
@@ -35,7 +37,9 @@ const userController = require('../controllers/userController');
  *                 type: string
  *     responses:
  *       201:
- *         description: Usuário criado com sucesso
+ *         description: Usuário registrado com sucesso
+ *       400:
+ *         description: Dados inválidos ou email já em uso
  */
 router.post('/register', userController.register);
 
@@ -43,7 +47,7 @@ router.post('/register', userController.register);
  * @swagger
  * /usuarios/login:
  *   post:
- *     summary: Realiza login de usuário
+ *     summary: Realiza login do usuário
  *     tags: [Usuários]
  *     requestBody:
  *       required: true
@@ -61,8 +65,61 @@ router.post('/register', userController.register);
  *                 type: string
  *     responses:
  *       200:
- *         description: Login bem-sucedido (retorna token JWT)
+ *         description: Login bem-sucedido (retorna token)
+ *       401:
+ *         description: Credenciais inválidas
  */
 router.post('/login', userController.login);
+
+/**
+ * @swagger
+ * /usuarios/{id}/role:
+ *   patch:
+ *     security:
+ *       - bearerAuth: []
+ *     summary: Altera o role de um usuário (somente admin)
+ *     tags: [Usuários]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID do usuário
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *     responses:
+ *       200:
+ *         description: Role atualizado com sucesso
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.patch('/:id/role', authMiddleware, checkAdmin, userController.updateUserRole);
+
+/**
+ * @swagger
+ * /usuarios:
+ *   get:
+ *     security:
+ *       - bearerAuth: []
+ *     summary: Lista todos os usuários (somente admin)
+ *     tags: [Usuários]
+ *     responses:
+ *       200:
+ *         description: Lista de usuários
+ *       403:
+ *         description: Acesso negado
+ */
+router.get('/', authMiddleware, checkAdmin, userController.listUsers);
 
 module.exports = router;

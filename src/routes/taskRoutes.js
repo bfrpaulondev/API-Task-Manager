@@ -2,44 +2,15 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
+const authMiddleware = require('../middlewares/auth');
+const multer = require('../config/multer'); // Config Multer para uploads
 
 /**
  * @swagger
  * tags:
  *   name: Tarefas
- *   description: Endpoints para gerenciamento de tarefas
+ *   description: CRUD de tarefas, uploads, favoritos, etc.
  */
-
-/**
- * @swagger
- * /tarefas:
- *   get:
- *     security:
- *       - bearerAuth: []
- *     summary: Lista todas as tarefas do usuário atual (filtradas e ordenadas)
- *     tags: [Tarefas]
- *     parameters:
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *       - in: query
- *         name: prioridade
- *         schema:
- *           type: string
- *       - in: query
- *         name: ordenar
- *         schema:
- *           type: string
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Lista de tarefas obtida com sucesso
- */
-router.get('/', taskController.listTasks);
 
 /**
  * @swagger
@@ -67,14 +38,69 @@ router.get('/', taskController.listTasks);
  *                 type: string
  *               prioridade:
  *                 type: string
+ *                 enum: [baixa, media, alta]
  *               dataVencimento:
  *                 type: string
- *                 format: date
+ *               workflow:
+ *                 type: string
+ *               taskType:
+ *                 type: string
+ *               assignedTo:
+ *                 type: string
+ *               instructions:
+ *                 type: string
+ *               customFields:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     fieldName:
+ *                       type: string
+ *                     fieldType:
+ *                       type: string
+ *                     value:
+ *                       type: string
  *     responses:
  *       201:
- *         description: Tarefa criada com sucesso
+ *         description: Tarefa criada
  */
-router.post('/', taskController.createTask);
+router.post('/', authMiddleware, taskController.createTask);
+
+/**
+ * @swagger
+ * /tarefas:
+ *   get:
+ *     security:
+ *       - bearerAuth: []
+ *     summary: Lista tarefas
+ *     tags: [Tarefas]
+ *     parameters:
+ *       - in: query
+ *         name: adminView
+ *         schema:
+ *           type: boolean
+ *         description: Se admin, listar todas as tarefas
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: workflow
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: taskType
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: favorite
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Lista de tarefas
+ */
+router.get('/', authMiddleware, taskController.listTasks);
 
 /**
  * @swagger
@@ -82,17 +108,20 @@ router.post('/', taskController.createTask);
  *   get:
  *     security:
  *       - bearerAuth: []
- *     summary: Obtém os detalhes de uma tarefa
+ *     summary: Obter detalhes de uma tarefa
  *     tags: [Tarefas]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         description: ID da tarefa
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Detalhes da tarefa
  */
-router.get('/:id', taskController.getTaskById);
+router.get('/:id', authMiddleware, taskController.getTaskById);
 
 /**
  * @swagger
@@ -100,14 +129,17 @@ router.get('/:id', taskController.getTaskById);
  *   put:
  *     security:
  *       - bearerAuth: []
- *     summary: Atualiza os detalhes de uma tarefa
+ *     summary: Atualiza uma tarefa
  *     tags: [Tarefas]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         description: ID da tarefa
+ *         schema:
+ *           type: string
  *     requestBody:
- *       required: true
+ *       required: false
  *       content:
  *         application/json:
  *           schema:
@@ -119,16 +151,28 @@ router.get('/:id', taskController.getTaskById);
  *                 type: string
  *               prioridade:
  *                 type: string
+ *                 enum: [baixa, media, alta]
  *               dataVencimento:
  *                 type: string
- *                 format: date
  *               status:
  *                 type: string
+ *               assignedTo:
+ *                 type: string
+ *               workflow:
+ *                 type: string
+ *               taskType:
+ *                 type: string
+ *               instructions:
+ *                 type: string
+ *               customFields:
+ *                 type: array
+ *                 items:
+ *                   type: object
  *     responses:
  *       200:
  *         description: Tarefa atualizada com sucesso
  */
-router.put('/:id', taskController.updateTask);
+router.put('/:id', authMiddleware, taskController.updateTask);
 
 /**
  * @swagger
@@ -136,73 +180,83 @@ router.put('/:id', taskController.updateTask);
  *   delete:
  *     security:
  *       - bearerAuth: []
- *     summary: Exclui uma tarefa
+ *     summary: Excluir uma tarefa
  *     tags: [Tarefas]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         description: ID da tarefa
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Tarefa excluída com sucesso
+ *         description: Tarefa excluída
  */
-router.delete('/:id', taskController.deleteTask);
+router.delete('/:id', authMiddleware, taskController.deleteTask);
 
 /**
  * @swagger
- * /tarefas/{id}/concluir:
+ * /tarefas/{id}/files:
+ *   post:
+ *     security:
+ *       - bearerAuth: []
+ *     summary: Faz upload de arquivos para a tarefa
+ *     tags: [Tarefas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID da tarefa
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       200:
+ *         description: Upload realizado com sucesso
+ */
+router.post('/:id/files', authMiddleware, upload.array('files'), taskController.uploadFiles);
+
+/**
+ * @swagger
+ * /tarefas/{id}/favorite:
  *   patch:
  *     security:
  *       - bearerAuth: []
- *     summary: Marca uma tarefa como concluída
+ *     summary: Marcar ou desmarcar tarefa como favorita
  *     tags: [Tarefas]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *     responses:
- *       200:
- *         description: Tarefa marcada como concluída
- */
-router.patch('/:id/concluir', taskController.markTaskAsDone);
-
-/**
- * @swagger
- * /tarefas/export/csv:
- *   get:
- *     security:
- *       - bearerAuth: []
- *     summary: Exporta a lista de tarefas do usuário para um arquivo CSV
- *     tags: [Tarefas]
- *     responses:
- *       200:
- *         description: CSV gerado
- */
-router.get('/export/csv', taskController.exportTasksToCSV);
-
-/**
- * @swagger
- * /tarefas/relatorio/produtividade:
- *   get:
- *     security:
- *       - bearerAuth: []
- *     summary: Gera um relatório de produtividade (tarefas concluídas em um período)
- *     tags: [Tarefas]
- *     parameters:
- *       - in: query
- *         name: dataInicio
+ *         description: ID da tarefa
  *         schema:
  *           type: string
- *           format: date
- *       - in: query
- *         name: dataFim
- *         schema:
- *           type: string
- *           format: date
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isFavorite:
+ *                 type: boolean
+ *                 description: true para favoritar, false para desfavoritar
  *     responses:
  *       200:
- *         description: Relatório de produtividade
+ *         description: Atualização de favorito bem-sucedida
  */
-router.get('/relatorio/produtividade', taskController.getProductivityReport);
+router.patch('/:id/favorite', authMiddleware, taskController.markFavorite);
 
 module.exports = router;

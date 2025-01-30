@@ -2,11 +2,12 @@
 const { createLogger, format, transports } = require('winston');
 require('winston-daily-rotate-file');
 
+// Formato de rotação de arquivos
 const fileRotateTransport = new transports.DailyRotateFile({
   filename: 'application-%DATE%.log',
   dirname: 'logs',
   datePattern: 'YYYY-MM-DD',
-  maxFiles: '14d',
+  maxFiles: '14d'
 });
 
 const logger = createLogger({
@@ -20,7 +21,7 @@ const logger = createLogger({
   transports: [
     new transports.Console(),
     fileRotateTransport
-  ],
+  ]
 });
 
 module.exports = logger;

@@ -3,37 +3,45 @@ const cron = require('node-cron');
 const dayjs = require('dayjs');
 const Task = require('../models/Task');
 const User = require('../models/User');
-const transporter = require('../config/mailer');
+const transporter = require('../config/mailer'); // se quiser enviar e-mail
 const logger = require('../config/logger');
 
-// Executa todo dia às 09:00
+/**
+ * Executa uma verificação todos os dias às 09:00
+ * Ex.: "0 9 * * *" (minuto=0, hora=9, qualquer dia, qualquer mês, qualquer diaSemana)
+ */
 cron.schedule('0 9 * * *', async () => {
   try {
-    logger.info('Verificando tarefas próximas do vencimento...');
-
+    logger.info('Iniciando verificação de lembretes de tarefas...');
+    
     const now = dayjs();
     const tomorrow = now.add(1, 'day');
 
-    // Buscar tarefas pendentes que vencem em <24 horas
+    // Buscar tarefas pendentes ou em-andamento
     const tasks = await Task.find({
-      status: 'pendente',
-      dataVencimento: { $gte: now.toDate(), $lte: tomorrow.toDate() }
+      status: { $in: ['pendente', 'em-andamento'] },
+      dataVencimento: { $lte: tomorrow.toDate(), $gte: now.toDate() }
     });
 
     for (const task of tasks) {
-      const user = await User.findById(task.user);
+      // buscar user assigned
+      if (!task.assignedTo) continue;
+      
+      const user = await User.findById(task.assignedTo);
       if (!user) continue;
 
+      // Exemplo: enviar e-mail
       await transporter.sendMail({
-        from: '"Gerenciador de Tarefas" <nao-responda@exemplo.com>',
+        from: '"Gerenciador de Tarefas" <no-reply@exemplo.com>',
         to: user.email,
         subject: `Lembrete: Tarefa "${task.titulo}" vence em breve!`,
-        text: `Olá, ${user.nome}!\nA tarefa "${task.titulo}" vencerá em menos de 24 horas.\n\nDescrição: ${task.descricao}\nVencimento: ${task.dataVencimento}\n\nNão perca o prazo!`
+        text: `Olá, ${user.nome}.\nA tarefa "${task.titulo}" vence em breve (até ${dayjs(task.dataVencimento).format('DD/MM/YYYY')}).\nStatus: ${task.status}\nDescrição: ${task.descricao}`
       });
 
-      logger.info(`Lembrete de vencimento enviado para ${user.email} sobre a tarefa ${task._id}`);
+      logger.info(`Lembrete enviado para ${user.email} sobre a tarefa ${task._id}`);
     }
+
   } catch (error) {
-    logger.error('Erro no processo de lembrete:', error);
+    logger.error('Erro no reminderService:', error);
   }
 });

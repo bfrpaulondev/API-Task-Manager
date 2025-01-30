@@ -6,10 +6,13 @@ const UserSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   senha: { type: String, required: true },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' }
 });
 
-// Hash da senha antes de salvar
-UserSchema.pre('save', async function(next) {
+/**
+ * Middleware que faz hash da senha antes de salvar no banco.
+ */
+UserSchema.pre('save', async function (next) {
   if (!this.isModified('senha')) {
     return next();
   }

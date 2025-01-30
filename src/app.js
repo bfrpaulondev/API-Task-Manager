@@ -2,60 +2,76 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
 
-// Conexão ao MongoDB (remover useNewUrlParser e useUnifiedTopology se estiver usando Mongoose 6+)
+// Configurações
 const connectDB = require('./config/db');
-connectDB();
+const logger = require('./config/logger');
+const swaggerSpec = require('./config/swagger');
 
-// Middleware de autenticação
+// Middlewares
 const authMiddleware = require('./middlewares/auth');
 
-// Rotas de usuários e tarefas
+// Rotas
 const userRoutes = require('./routes/userRoutes');
+const workflowRoutes = require('./routes/workflowRoutes');
+const taskTypeRoutes = require('./routes/taskTypeRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 
-// Se estiver usando Swagger para documentação
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./swagger');
-
-// Inicializa a aplicação
+// Inicia a aplicação Express
 const app = express();
 
-// Configurações de CORS (exemplo simples, ajuste conforme necessidade)
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Conecta ao banco de dados
+connectDB();
 
-// Para que a aplicação possa interpretar JSON no corpo das requisições
+// Middlewares globais
+app.use(cors());
 app.use(express.json());
 
-// Rota de documentação (Swagger), se estiver usando
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+// Rota de Boas-Vindas
 /**
- * ROTA DE BOAS-VINDAS
- * Aqui mostramos uma mensagem amistosa para quem acessar a raiz do servidor.
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Mensagem de boas-vindas
+ *     tags: [Geral]
+ *     responses:
+ *       200:
+ *         description: Mensagem de boas-vindas
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
  */
 app.get('/', (req, res) => {
-  res.send(`
-    <h1>Bem-vindo ao Gerenciador de Tarefas!</h1>
-    <p>Para acessar a documentação completa da API, visite: <a href="/api-docs">/api-docs</a></p>
-    <p>Recursos principais:</p>
-    <ul>
-      <li><strong>/usuarios</strong> – Endpoints para cadastro e login.</li>
-      <li><strong>/tarefas</strong> – Endpoints para criar, listar, editar, excluir e concluir tarefas (requer autenticação).</li>
-    </ul>
-    <p>Use um cliente HTTP (como Insomnia ou Postman) ou seu front-end para consumir esta API.</p>
-    <p><em>Bom proveito!</em></p>
-  `);
+  res.send('Bem-vindo ao Gerenciador de Tarefas API!');
 });
+
+// Documentação com Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rotas de usuários (cadastro, login, etc.)
 app.use('/usuarios', userRoutes);
 
-// Rotas de tarefas (protegidas por JWT)
+// Rotas de workflows (só admin) - requer autenticação
+app.use('/workflows', authMiddleware, workflowRoutes);
+
+// Rotas de tipos de tarefa (só admin) - requer autenticação
+app.use('/taskTypes', authMiddleware, taskTypeRoutes);
+
+// Rotas de tarefas (CRUD, uploads, etc.) - requer autenticação
 app.use('/tarefas', authMiddleware, taskRoutes);
+
+// Servir arquivos de upload (pasta 'uploads') de forma estática se desejar
+app.use('/uploads', express.static('uploads'));
+
+// Importa (e executa) o serviço de lembretes com node-cron, se for usar
+require('./services/reminderService');
+
+// Tratamento de erros gerais (opcional)
+app.use((err, req, res, next) => {
+  logger.error(`[ERROR] ${err.message}`);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
 
 module.exports = app;
