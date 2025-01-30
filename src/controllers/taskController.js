@@ -1,7 +1,12 @@
 // src/controllers/taskController.js
+
 const dayjs = require('dayjs');
 const Task = require('../models/Task');
 const TaskType = require('../models/TaskType');
+const csv = require('csv-parser');
+const stream = require('stream');
+const { cloudinary } = require('../config/cloudinary');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Criar nova tarefa
@@ -11,8 +16,14 @@ const TaskType = require('../models/TaskType');
 exports.createTask = async (req, res) => {
   try {
     const {
-      titulo, descricao, prioridade, dataVencimento,
-      workflow, taskType, assignedTo, instructions,
+      titulo,
+      descricao,
+      prioridade,
+      dataVencimento,
+      workflow,
+      taskType,
+      assignedTo,
+      instructions,
       customFields
     } = req.body;
 
@@ -25,7 +36,7 @@ exports.createTask = async (req, res) => {
       titulo,
       descricao,
       prioridade,
-      dataVencimento,
+      dataVencimento: dayjs(dataVencimento).toDate(),
       createdBy: req.userId,
       instructions,
       // userRole === admin => pode atribuir a outro user
@@ -60,6 +71,7 @@ exports.createTask = async (req, res) => {
     const task = await Task.create(newTaskData);
     return res.status(201).json(task);
   } catch (error) {
+    console.error('Erro ao criar tarefa:', error);
     return res.status(500).json({ error: 'Erro ao criar tarefa' });
   }
 };
@@ -74,7 +86,7 @@ exports.listTasks = async (req, res) => {
     let filter = {};
     const { adminView, status, workflow, taskType, favorite } = req.query;
 
-    if (req.userRole !== 'admin' || !adminView) {
+    if (req.userRole !== 'admin' || adminView !== 'true') {
       // user comum: ver tarefas atribuídas a si (ou criadas por si, se quiser)
       filter.$or = [
         { assignedTo: req.userId },
@@ -96,6 +108,7 @@ exports.listTasks = async (req, res) => {
 
     return res.status(200).json(tasks);
   } catch (error) {
+    console.error('Erro ao listar tarefas:', error);
     return res.status(500).json({ error: 'Erro ao listar tarefas' });
   }
 };
@@ -128,6 +141,7 @@ exports.getTaskById = async (req, res) => {
 
     return res.status(200).json(task);
   } catch (error) {
+    console.error('Erro ao obter tarefa:', error);
     return res.status(500).json({ error: 'Erro ao obter tarefa' });
   }
 };
@@ -140,8 +154,16 @@ exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      titulo, descricao, prioridade, dataVencimento, status,
-      workflow, taskType, assignedTo, instructions, customFields
+      titulo,
+      descricao,
+      prioridade,
+      dataVencimento,
+      status,
+      workflow,
+      taskType,
+      assignedTo,
+      instructions,
+      customFields
     } = req.body;
 
     const task = await Task.findById(id);
@@ -182,9 +204,9 @@ exports.updateTask = async (req, res) => {
     if (titulo !== undefined) task.titulo = titulo;
     if (descricao !== undefined) task.descricao = descricao;
     if (prioridade !== undefined) task.prioridade = prioridade;
-    if (dataVencimento !== undefined) task.dataVencimento = dataVencimento;
+    if (dataVencimento !== undefined) task.dataVencimento = dayjs(dataVencimento).toDate();
     if (instructions !== undefined) task.instructions = instructions;
-    
+
     // Admin pode mudar workflow, taskType, assignedTo, status
     if (req.userRole === 'admin') {
       if (workflow !== undefined) task.workflow = workflow;
@@ -220,6 +242,7 @@ exports.updateTask = async (req, res) => {
     await task.save();
     return res.status(200).json(task);
   } catch (error) {
+    console.error('Erro ao atualizar tarefa:', error);
     return res.status(500).json({ error: 'Erro ao atualizar tarefa' });
   }
 };
@@ -250,12 +273,13 @@ exports.deleteTask = async (req, res) => {
     await Task.deleteOne({ _id: id });
     return res.status(200).json({ message: 'Tarefa excluída com sucesso' });
   } catch (error) {
+    console.error('Erro ao excluir tarefa:', error);
     return res.status(500).json({ error: 'Erro ao excluir tarefa' });
   }
 };
 
 /**
- * Upload de arquivos (já configurado com multer)
+ * Upload de arquivos (já configurado com multer e Cloudinary)
  * - rota: POST /tarefas/:id/files
  */
 exports.uploadFiles = async (req, res) => {
@@ -280,28 +304,67 @@ exports.uploadFiles = async (req, res) => {
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
 
-    req.files.forEach(file => {
-      task.files.push({
+    // Array para armazenar informações dos arquivos carregados
+    const uploadedFiles = [];
+
+    // Processar cada arquivo
+    for (const file of req.files) {
+      uploadedFiles.push({
         url: file.path, // URL retornada pelo Cloudinary
         originalName: file.originalname,
-        fileType: file.mimetype
+        fileType: file.mimetype,
       });
-    });
 
+      // Se o arquivo for CSV, processar seu conteúdo (opcional)
+      if (file.mimetype === 'text/csv') {
+        const results = [];
+        const readableStream = new stream.Readable();
+        readableStream.push(file.buffer);
+        readableStream.push(null);
+
+        await new Promise((resolve, reject) => {
+          readableStream
+            .pipe(csv())
+            .on('data', (data) => results.push(data))
+            .on('end', () => {
+              console.log('Dados do CSV:', results);
+              // Implemente a lógica para processar os dados do CSV conforme necessário
+              resolve();
+            })
+            .on('error', (err) => {
+              console.error('Erro ao processar CSV:', err);
+              reject(err);
+            });
+        });
+
+        // Exemplo: salvar os dados do CSV em um campo customizado da tarefa
+        // Assumindo que 'customFields' pode armazenar os dados
+        task.customFields = {
+          ...task.customFields,
+          csvData: results
+        };
+      }
+    }
+
+    // Atualizar a tarefa com os novos arquivos
+    task.files = [...task.files, ...uploadedFiles];
     await task.save();
+
     return res.status(200).json({
       message: 'Upload realizado com sucesso',
-      task
+      task,
     });
+
   } catch (error) {
-    return res.status(500).json({ error: 'Erro ao fazer upload de arquivos' });
+    console.error('Erro ao fazer upload de arquivos:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 
 /**
  * Marcar/Desmarcar favorito
  * - PATCH /tarefas/:id/favorite
- * body: { isFavorite: true/false }
+ * - body: { isFavorite: true/false }
  */
 exports.markFavorite = async (req, res) => {
   try {
@@ -313,15 +376,21 @@ exports.markFavorite = async (req, res) => {
       return res.status(404).json({ error: 'Tarefa não encontrada' });
     }
 
-    // Verifica permissão
-    if (task.assignedTo?.toString() !== req.userId && req.userRole !== 'admin') {
-      return res.status(403).json({ error: 'Somente quem recebeu a tarefa (ou admin) pode favoritá-la' });
+    // Verifica permissão (usuário pode marcar/desmarcar apenas suas tarefas ou admin)
+    if (req.userRole !== 'admin') {
+      if (
+        task.createdBy.toString() !== req.userId &&
+        task.assignedTo?.toString() !== req.userId
+      ) {
+        return res.status(403).json({ error: 'Sem permissão para marcar como favorito' });
+      }
     }
 
     task.isFavorite = Boolean(isFavorite);
     await task.save();
     return res.status(200).json({ message: 'Favorito atualizado', task });
   } catch (error) {
+    console.error('Erro ao marcar como favorito:', error);
     return res.status(500).json({ error: 'Erro ao marcar como favorito' });
   }
 };

@@ -3,11 +3,19 @@ const mongoose = require('mongoose');
 
 // Informações de arquivo (fotos, vídeos, docs etc.)
 const FileSchema = new mongoose.Schema({
-  url: { type: String },          // URL do arquivo (local ou S3)
-  originalName: { type: String }, // Nome original do arquivo
-  fileType: { type: String },     // Mime type
-  uploadedAt: { type: Date, default: Date.now }
-});
+  url: {
+    type: String,
+    required: true,
+  },
+  originalName: {
+    type: String,
+    required: true,
+  },
+  fileType: {
+    type: String,
+    required: true,
+  },
+}, { _id: false });
 
 // Respostas para campos dinâmicos
 const CustomFieldSchema = new mongoose.Schema({
