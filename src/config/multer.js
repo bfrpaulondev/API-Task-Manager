@@ -22,9 +22,8 @@ const storage = new CloudinaryStorage({
       'odp'                   ,
       'mp3', 'wav', 'ogg', 'flac', // Arquivos de áudio
       'mp4', 'avi', 'mkv', 'webm', // Arquivos de vídeo
-      'csv',                    // Planilhas CSV
       'txt',                    // Arquivos de texto
-      'gif', 'webp',            // Outros formatos de imagem
+      'gif', 'webp',  "mpeg"         // Outros formatos de imagem
 
     ]
   },
