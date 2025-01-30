@@ -7,7 +7,6 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'gerenciador_de_tarefas', // Nome da pasta no Cloudinary
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'pdf'] // Formatos permitidos
   },
 });
 
