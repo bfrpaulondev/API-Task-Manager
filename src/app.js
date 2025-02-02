@@ -17,6 +17,7 @@ const userRoutes = require('./routes/userRoutes');
 const workflowRoutes = require('./routes/workflowRoutes');
 const taskTypeRoutes = require('./routes/taskTypeRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const emailRoutes = require("./routes/emailRoutes");
 
 // Inicia a aplicação Express
 const app = express();
@@ -67,6 +68,10 @@ app.use('/uploads', express.static('uploads'));
 
 // Importa (e executa) o serviço de lembretes com node-cron, se for usar
 require('./services/reminderService');
+
+// Rotas de email (só admin) - requer autenticação
+app.use("/email", emailRoutes);
+
 
 // Tratamento de erros gerais (opcional)
 app.use((err, req, res, next) => {

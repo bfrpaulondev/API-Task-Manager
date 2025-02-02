@@ -30,9 +30,9 @@ cron.schedule('0 9 * * *', async () => {
       const user = await User.findById(task.assignedTo);
       if (!user) continue;
 
-      // Exemplo: enviar e-mail
+     // Enviar email com o lembrete
       await transporter.sendMail({
-        from: '"Gerenciador de Tarefas" <no-reply@exemplo.com>',
+        from: '"Gerenciador de Tarefas" <brunopaulon@outlook.com.br>',
         to: user.email,
         subject: `Lembrete: Tarefa "${task.titulo}" vence em breve!`,
         text: `Olá, ${user.nome}.\nA tarefa "${task.titulo}" vence em breve (até ${dayjs(task.dataVencimento).format('DD/MM/YYYY')}).\nStatus: ${task.status}\nDescrição: ${task.descricao}`
